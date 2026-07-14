@@ -1,4 +1,5 @@
 import datetime
+from typing import List
 from app.database import Base
 from sqlalchemy import ForeignKey
 from sqlalchemy.orm import mapped_column, relationship
@@ -20,3 +21,4 @@ class JobOffer(Base):
     publication_date: Mapped[datetime.date] = mapped_column()
     expiration_date: Mapped[datetime.date] = mapped_column()
     last_seen_at: Mapped[datetime.date] = mapped_column()
+    technologies: Mapped[List["Technology"]] = relationship(secondary="offer_tech", back_populates="offers")
