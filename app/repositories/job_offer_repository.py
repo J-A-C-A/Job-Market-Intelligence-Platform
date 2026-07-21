@@ -12,6 +12,11 @@ def get_by_id(db: Session, offer_id: int):
     result = db.execute(query).scalar_one_or_none()
     return result
 
+def get_by_url(db: Session, url: str):
+    query = select(JobOffer).where(JobOffer.url_address == url)
+    result = db.execute(query).scalar_one_or_none()
+    return result
+
 def create(db: Session, offer_data:dict, company:Company, technologies: list[Technology]):
     new_offer = JobOffer(**offer_data,company=company,technologies=technologies)
     db.add(new_offer)
