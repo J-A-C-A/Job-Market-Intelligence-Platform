@@ -17,6 +17,8 @@ class JobOfferResponse(BaseModel):
     salary_min: float
     salary_max: float
     location:str
+    url_address: str
+    job_title: str
     offer_id: int
     class Config:
         from_attributes = True
@@ -27,6 +29,8 @@ class JobOfferCreate(BaseModel):
     salary_min: float
     salary_max: float
     location: str
+    url_address: str
+    job_title: str
     type_of_contract: enums.ContractType
     experience: enums.ExperienceLevel
     mode_of_work: enums.WorkMode

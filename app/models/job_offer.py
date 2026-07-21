@@ -21,3 +21,5 @@ class JobOffer(Base):
     expiration_date: Mapped[datetime.date] = mapped_column(nullable=True)
     last_seen_at: Mapped[datetime.date] = mapped_column(nullable=True)
     technologies: Mapped[list["Technology"]] = relationship(secondary="offer_tech", back_populates="offers")
+    url_address: Mapped[str] = mapped_column(nullable=False,unique=True)
+    job_title: Mapped[str] = mapped_column(nullable=False)
