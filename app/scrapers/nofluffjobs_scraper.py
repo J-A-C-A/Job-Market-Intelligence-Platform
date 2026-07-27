@@ -4,6 +4,8 @@ import re
 import requests as req
 from bs4 import BeautifulSoup
 from app.enums import ExperienceLevel, WorkMode, ContractType
+from app.schemas.job_offer import JobOfferCreate
+
 PATTERN = r"\s"
 HEADERS = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'}
 def fetch_page(url:str) -> str:
@@ -94,10 +96,10 @@ def parse_expiration_date(parse_data:dict) -> datetime.date:
 
 def parse_experience(parse_data:dict) -> str:
     experience = parse_data["basics"]["seniority"][0]
-    return experience
+    return experience.title()
 
-def map_experience_to_enum(exp:str) -> ExperienceLevel:
-    exp = exp.title()
+def map_experience_to_enum(parse_data: dict) -> ExperienceLevel:
+    exp = parse_experience(parse_data)
     if exp == "Team Lider":
         level = ExperienceLevel("Senior")
     elif exp == "Expert":
@@ -153,6 +155,39 @@ def map_contract_type_to_enum(parse_data:dict) -> ContractType:
     else:
         raise ValueError(f"Unexpected contract type: {ct}")
     return contract_type_enum
+
+def create_JobOffer_from_scraped_data(parse_data:dict, url:str) -> JobOfferCreate | None:
+    company_name = parse_company_name(parse_data)
+    technologies = parse_tech(parse_data)
+    job_title = parse_job_title(parse_data)
+    experience_level = map_experience_to_enum(parse_data)
+    contract_type = map_contract_type_to_enum(parse_data)
+    mode_of_work_and_location = parse_mode_of_work_and_location(parse_data)
+    mode_of_work = mode_of_work_and_location[0]
+    location = mode_of_work_and_location[1]
+    expiration_date = parse_expiration_date(parse_data)
+    salary_range = parse_salary(parse_data)
+    if salary_range is not None:
+        min_salary = salary_range[0]
+        max_salary = salary_range[1]
+        return JobOfferCreate(
+            company_name=company_name,
+            technologies=technologies,
+            job_title=job_title,
+            experience=experience_level,
+            type_of_contract= contract_type,
+            mode_of_work=mode_of_work,
+            location=location,
+            publication_date=None,
+            expiration_date=expiration_date,
+            url_address=url,
+            salary_min=min_salary,
+            salary_max=max_salary)
+    else:
+        return None
+
+
+
 
 
 
