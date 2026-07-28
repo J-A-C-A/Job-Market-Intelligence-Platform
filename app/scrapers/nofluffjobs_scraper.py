@@ -20,6 +20,20 @@ def find_offer_slug(url:str) -> str:
     offer_slug = url.split("/")[-1]
     return offer_slug
 
+def build_offer_url_from_slug(offer_slug:str) -> str:
+    url = f"https://nofluffjobs.com/pl/job/{offer_slug}"
+    return url
+
+def build_category_url_from_slug(category_slug:str) -> str:
+    url = f"https://nofluffjobs.com/pl/{category_slug}"
+    return url
+
+def build_category_list(category_list:list) -> list[str]:
+    category_urls = []
+    for cat in category_list:
+        category_urls.append(build_category_url_from_slug(cat))
+    return category_urls
+
 def parse_state_transfer(html:str) -> dict:
     soup = BeautifulSoup(html, 'html.parser')
     tag = soup.find("script", {"id": "serverApp-state"})
@@ -35,6 +49,23 @@ def find_posting_data(state:dict, offer_slug:str) -> dict:
             return state[item]
     else:
         raise Exception(f"No posting data found in serverApp-state")
+
+def find_list_of_offers(state:dict) -> list:
+    for val in state.values():
+        if isinstance(val,dict) and "postings" in val:
+            return val["postings"]
+    else:
+        raise Exception(f"No posting data found in serverApp-state")
+
+def get_offers_url_from_category(category_urls: list) -> list[str]:
+    offers_url_list = []
+    for url in category_urls:
+        html_content = fetch_page(url)
+        state = parse_state_transfer(html_content)
+        postings_data = find_list_of_offers(state)
+        for post in postings_data:
+            offers_url_list.append(build_offer_url_from_slug(post["url"]))
+    return list(set(offers_url_list))
 
 def parse_company_name(parse_data:dict) -> str:
     company_name = parse_data["company"]["name"]
@@ -186,7 +217,23 @@ def create_JobOffer_from_scraped_data(parse_data:dict, url:str) -> JobOfferCreat
     else:
         return None
 
+def run_scraper(category_list: list) -> list:
+    category_url_list = build_category_list(category_list)
+    offers_url_list = get_offers_url_from_category(category_url_list)
+    scraped_offers_list = []
+    for offer in offers_url_list:
+        try:
+            html_content = fetch_page(offer)
+            state = parse_state_transfer(html_content)
+            offer_slug = find_offer_slug(offer)
+            posting_data = find_posting_data(state,offer_slug)
+            job_offer = create_JobOffer_from_scraped_data(posting_data,offer)
+            if job_offer is not None:
+                scraped_offers_list.append(job_offer)
+        except Exception as e:
+            print(f"Unexpected exception: {e}")
 
+    return scraped_offers_list
 
 
 
