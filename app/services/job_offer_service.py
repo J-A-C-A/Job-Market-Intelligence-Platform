@@ -15,6 +15,9 @@ def create_job_offer_from_scraped_data(db: Session, data: JobOfferCreate) -> Job
     data_dict["status"] = OfferStatus.ACTIVE
     data_dict["last_seen_at"] = datetime.date.today()
     offer = job_offer_repository.create(db, data_dict, company=company, technologies=tech)
+
+    db.commit()
+    db.refresh(offer)
     return offer
 
 def detect_and_record_change(db: Session, old_offer: JobOffer, new_offer: JobOfferCreate) -> None:

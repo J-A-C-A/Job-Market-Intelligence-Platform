@@ -20,8 +20,6 @@ def get_by_url(db: Session, url: str):
 def create(db: Session, offer_data:dict, company:Company, technologies: list[Technology]):
     new_offer = JobOffer(**offer_data,company=company,technologies=technologies)
     db.add(new_offer)
-    db.commit()
-    db.refresh(new_offer)
     return new_offer
 
 def search(db: Session,
