@@ -1,13 +1,23 @@
 import datetime
 import json
-import re
 import requests as req
 from bs4 import BeautifulSoup
 from app.enums import ExperienceLevel, WorkMode, ContractType
 from app.schemas.job_offer import JobOfferCreate
 
-PATTERN = r"\s"
+CATEGORY_SLUGS = [
+    "backend", "frontend", "fullstack", "mobile", "embedded", "testing",
+    "devops", "architecture", "security", "game-dev", "artificial-intelligence",
+    "data", "sys-administrator", "agile", "product-management", "project-manager",
+    "business-intelligence", "business-analyst", "ux", "support", "erp",
+    "javascript", ".net", "sql", "nosql", "java", "python", "react", "aws",
+    "typescript", "html", "css", "angular", "azure", "php", "c%2B%2B",
+    "android", "kotlin", "vue.js", "ios", "golang", "c", "hadoop", "spark",
+    "ruby%20on%20rails", "flutter", "elixir", "c%23", "react%20native", "rust",
+]
+
 HEADERS = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'}
+
 def fetch_page(url:str) -> str:
     response = req.get(url,headers=HEADERS)
     if response.status_code == 200:
@@ -81,16 +91,14 @@ def parse_salary_UOP(parse_data:dict) -> list | None:
         raise Exception(f"Unexpected type_of_stake: {type_of_stake}")
 
     return salary
-    #salary = parse_data["essentials"]["originalSalary"]["types"]["permanent"]["range"]
+
 
 def parse_salary_B2B(parse_data:dict) -> list | None:
-    #type_of_stake = parse_data["essentials"]["originalSalary"]["types"]["b2b"]["period"]
+
     type_of_stake = parse_data.get("essentials", {}).get("originalSalary", {}).get("types", {}).get("b2b", {}).get("period",None)
     if type_of_stake == "Hour":
-        #salary = parse_data["essentials"]["convertedSalary"]["types"]["b2b"]["range"]
         salary = parse_data.get("essentials", {}).get("convertedSalary", {}).get("types", {}).get("b2b", {}).get("range",None)
     elif type_of_stake == "Month":
-        #salary = parse_data["essentials"]["originalSalary"]["types"]["b2b"]["range"]
         salary = parse_data.get("essentials", {}).get("originalSalary", {}).get("types", {}).get("b2b", {}).get("range", None)
     else:
         raise Exception(f"Unexpected type_of_stake: {type_of_stake}")
@@ -217,8 +225,8 @@ def create_JobOffer_from_scraped_data(parse_data:dict, url:str) -> JobOfferCreat
     else:
         return None
 
-def run_scraper(category_list: list) -> list:
-    category_url_list = build_category_list(category_list)
+def run_scraper() -> list:
+    category_url_list = build_category_list(CATEGORY_SLUGS)
     offers_url_list = get_offers_url_from_category(category_url_list)
     scraped_offers_list = []
     for offer in offers_url_list:
@@ -238,29 +246,5 @@ def run_scraper(category_list: list) -> list:
 
 
 
-#====STARE ROZWIĄZANIE====
-def parse_job_posting_jsonld(html:str) -> dict:
-    soup = BeautifulSoup(html, 'html.parser')
-    tag = soup.find("script", {"type": "application/ld+json"})
-    json_dict = json.loads(tag.string)
-    for item in json_dict["@graph"]:
-        if item["@type"] == "JobPosting":
-            return item
-    else:
-        raise Exception(f"No JobPosting found in JSON-LD")
 
-def parse_monthly_salary(html:str) -> tuple[float,float] | None:
-    soup = BeautifulSoup(html, 'html.parser')
-    salary_div = soup.find("div", {"class": "salary"})
-    if salary_div is None:
-        return None
-    else:
-        h4_tag = salary_div.find("h4")
-        raw_text = h4_tag.text
-        text_without_pln = raw_text.replace("PLN", "")
-        text_without_space = text_without_pln.strip()
-        strings = text_without_space.split("–")
-        float1 = float(re.sub(PATTERN, "", strings[0]))
-        float2 = float(re.sub(PATTERN, "", strings[1]))
-        return (float1, float2)
 
