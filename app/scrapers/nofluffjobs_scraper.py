@@ -189,7 +189,7 @@ def map_contract_type_to_enum(parse_data:dict) -> ContractType:
     ct = parse_contract_type(parse_data)
     if ct == "Permanent":
         contract_type_enum = ContractType("UOP")
-    elif ct == "B2b":
+    elif ct == "B2B":
         contract_type_enum = ContractType("B2B")
     else:
         raise ValueError(f"Unexpected contract type: {ct}")
