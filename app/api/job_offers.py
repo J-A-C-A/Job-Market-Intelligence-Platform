@@ -6,7 +6,10 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.enums import ExperienceLevel, ContractType, WorkMode, OfferStatus
 from app.repositories import job_offer_repository
-from app.schemas.job_offer import JobOfferResponse
+from app.schemas.job_offer import JobOfferResponse, ScrapeUrlRequest
+from app.scrapers.nofluffjobs_scraper import fetch_page, parse_state_transfer, find_offer_slug, find_posting_data, \
+    create_JobOffer_from_scraped_data
+from app.services.job_offer_service import process_scraped_offer
 
 router = APIRouter(prefix="/offers", tags=["offers"])
 
@@ -50,3 +53,16 @@ def get_offer(offer_id:int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Offer not found")
     else:
         return result
+
+@router.post("/",response_model= JobOfferResponse, status_code=201)
+def create_offer(request: ScrapeUrlRequest, db: Session = Depends(get_db)):
+    html_content = fetch_page(url=request.url_address)
+    state = parse_state_transfer(html_content)
+    slug = find_offer_slug(url=request.url_address)
+    posting_data = find_posting_data(state=state,offer_slug=slug)
+    raw_offer = create_JobOffer_from_scraped_data(parse_data=posting_data, url=request.url_address)
+    if raw_offer is None:
+        raise HTTPException(status_code=422, detail="Unprocessable Entity")
+    else:
+        offer = process_scraped_offer(db=db, data=raw_offer)
+        return offer
