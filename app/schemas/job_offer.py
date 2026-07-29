@@ -9,7 +9,7 @@ class JobOfferResponse(BaseModel):
     status: enums.OfferStatus
     experience: enums.ExperienceLevel
     mode_of_work: enums.WorkMode
-    publication_date: datetime.date
+    publication_date: datetime.date | None = None
     expiration_date: datetime.date
     last_seen_at: datetime.date
     company: CompanyResponse
@@ -34,7 +34,8 @@ class JobOfferCreate(BaseModel):
     type_of_contract: enums.ContractType
     experience: enums.ExperienceLevel
     mode_of_work: enums.WorkMode
-    publication_date: datetime.date
+    publication_date: datetime.date | None = None
     expiration_date: datetime.date
 
-
+class ScrapeUrlRequest(BaseModel):
+    url_address: str
