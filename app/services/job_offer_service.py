@@ -33,6 +33,11 @@ def detect_and_record_change(db: Session, old_offer: JobOffer, new_offer: JobOff
     db.commit()
     db.refresh(old_offer)
 
+def delete_record_by_id(db: Session, offer_id: int) -> None:
+    job_offer_repository.delete_by_id(db=db, offer_id=offer_id)
+    db.commit()
+
+
 def process_scraped_offer(db: Session, data: JobOfferCreate) -> JobOffer:
     offer = job_offer_repository.get_by_url(db, data.url_address)
     if offer is None:

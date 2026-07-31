@@ -1,6 +1,6 @@
 import datetime
 
-from sqlalchemy import select
+from sqlalchemy import select, delete
 from sqlalchemy.orm import Session
 
 from app.enums import ExperienceLevel, ContractType, WorkMode, OfferStatus
@@ -21,6 +21,10 @@ def create(db: Session, offer_data:dict, company:Company, technologies: list[Tec
     new_offer = JobOffer(**offer_data,company=company,technologies=technologies)
     db.add(new_offer)
     return new_offer
+
+def delete_by_id(db:Session, offer_id: int):
+    query = delete(JobOffer).where(JobOffer.offer_id == offer_id)
+    db.execute(query)
 
 def search(db: Session,
            technology: str | None= None,
