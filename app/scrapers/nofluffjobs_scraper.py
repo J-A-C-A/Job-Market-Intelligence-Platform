@@ -82,26 +82,54 @@ def parse_company_name(parse_data:dict) -> str:
     return company_name
 
 def parse_salary_UOP(parse_data:dict) -> list | None:
+    currency = parse_data.get("essentials", {}).get("originalSalary", {}).get("currency",None)
     type_of_stake = parse_data.get("essentials", {}).get("originalSalary", {}).get("types", {}).get("permanent", {}).get("period", None)
-    if type_of_stake == "Hour":
-        salary = parse_data.get("essentials", {}).get("convertedSalary", {}).get("types", {}).get("permanent", {}).get("range", None)
-    elif type_of_stake == "Month":
-        salary = parse_data.get("essentials", {}).get("originalSalary", {}).get("types", {}).get("permanent", {}).get("range",None)
+    # if type_of_stake == "Hour":
+    #     salary = parse_data.get("essentials", {}).get("convertedSalary", {}).get("types", {}).get("permanent", {}).get("range", None)
+    # elif type_of_stake == "Month":
+    #     salary = parse_data.get("essentials", {}).get("originalSalary", {}).get("types", {}).get("permanent", {}).get("range",None)
+    # else:
+    #     raise Exception(f"Unexpected type_of_stake: {type_of_stake}")
+    #
+    # return salary
+    if currency == "PLN":
+        if type_of_stake == "Month":
+            salary = parse_data.get("essentials", {}).get("originalSalary", {}).get("types", {}).get("permanent", {}).get("range",None)
+        elif type_of_stake == "Hour":
+            salary = parse_data.get("essentials", {}).get("convertedSalary", {}).get("types", {}).get("permanent",{}).get("range",None)
+        else:
+            raise Exception(f"Unexpected type_of_stake: {type_of_stake}")
     else:
-        raise Exception(f"Unexpected type_of_stake: {type_of_stake}")
-
+        type_of_stake = parse_data.get("essentials", {}).get("convertedSalary", {}).get("types", {}).get("permanent",{}).get("period", None)
+        if type_of_stake == "Month":
+            salary = parse_data.get("essentials", {}).get("convertedSalary", {}).get("types", {}).get("permanent", {}).get("range", None)
+        else:
+            raise Exception(f"Unexpected type_of_stake: {type_of_stake}")
     return salary
 
-
 def parse_salary_B2B(parse_data:dict) -> list | None:
-
+    currency = parse_data.get("essentials", {}).get("originalSalary", {}).get("currency", None)
     type_of_stake = parse_data.get("essentials", {}).get("originalSalary", {}).get("types", {}).get("b2b", {}).get("period",None)
-    if type_of_stake == "Hour":
-        salary = parse_data.get("essentials", {}).get("convertedSalary", {}).get("types", {}).get("b2b", {}).get("range",None)
-    elif type_of_stake == "Month":
-        salary = parse_data.get("essentials", {}).get("originalSalary", {}).get("types", {}).get("b2b", {}).get("range", None)
+    # if type_of_stake == "Hour":
+    #     salary = parse_data.get("essentials", {}).get("convertedSalary", {}).get("types", {}).get("b2b", {}).get("range",None)
+    # elif type_of_stake == "Month":
+    #     salary = parse_data.get("essentials", {}).get("originalSalary", {}).get("types", {}).get("b2b", {}).get("range", None)
+    # else:
+    #     raise Exception(f"Unexpected type_of_stake: {type_of_stake}")
+    # return salary
+    if currency == "PLN":
+        if type_of_stake == "Month":
+            salary = parse_data.get("essentials", {}).get("originalSalary", {}).get("types", {}).get("b2b", {}).get("range", None)
+        elif type_of_stake == "Hour":
+            salary = parse_data.get("essentials", {}).get("convertedSalary", {}).get("types", {}).get("b2b", {}).get("range", None)
+        else:
+            raise Exception(f"Unexpected type_of_stake: {type_of_stake}")
     else:
-        raise Exception(f"Unexpected type_of_stake: {type_of_stake}")
+        type_of_stake = parse_data.get("essentials", {}).get("convertedSalary", {}).get("types", {}).get("b2b",{}).get("period", None)
+        if type_of_stake == "Month":
+            salary = parse_data.get("essentials", {}).get("convertedSalary", {}).get("types", {}).get("b2b",{}).get("range",None)
+        else:
+            raise Exception(f"Unexpected type_of_stake: {type_of_stake}")
     return salary
 
 def parse_salary(parse_data:dict) -> list | None:
