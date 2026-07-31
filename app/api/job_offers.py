@@ -9,6 +9,7 @@ from app.repositories import job_offer_repository
 from app.schemas.job_offer import JobOfferResponse, ScrapeUrlRequest
 from app.scrapers.nofluffjobs_scraper import fetch_page, parse_state_transfer, find_offer_slug, find_posting_data, \
     create_JobOffer_from_scraped_data
+from app.services import job_offer_service
 from app.services.job_offer_service import process_scraped_offer
 
 router = APIRouter(prefix="/offers", tags=["offers"])
@@ -66,3 +67,11 @@ def create_offer(request: ScrapeUrlRequest, db: Session = Depends(get_db)):
     else:
         offer = process_scraped_offer(db=db, data=raw_offer)
         return offer
+
+@router.delete("/{offer_id}", status_code=204)
+def delete_offer(offer_id: int, db: Session = Depends(get_db)):
+    is_exists = job_offer_repository.get_by_id(db=db, offer_id=offer_id)
+    if is_exists:
+        job_offer_service.delete_record_by_id(db=db, offer_id=offer_id)
+    else:
+        raise HTTPException(status_code=404, detail="Offer not found")
