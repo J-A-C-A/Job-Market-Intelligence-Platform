@@ -200,7 +200,10 @@ def parse_mode_of_work_and_location(parse_data:dict) -> list:
         else:
             location = parse_data["location"]["places"][0]["city"]
 
-    work_mode_enum = WorkMode(work_mode)
+    try:
+        work_mode_enum = WorkMode(work_mode)
+    except ValueError:
+        raise Exception(f"Could not determine work mode from remote value")
     return [work_mode_enum, location]
 
 
