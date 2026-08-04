@@ -1,8 +1,6 @@
 import datetime
-
 from sqlalchemy import select, delete
 from sqlalchemy.orm import Session
-
 from app.enums import ExperienceLevel, ContractType, WorkMode, OfferStatus
 from app.models import JobOffer, Company, Technology
 
@@ -17,7 +15,7 @@ def get_by_url(db: Session, url: str):
     result = db.execute(query).scalar_one_or_none()
     return result
 
-def create(db: Session, offer_data:dict, company:Company, technologies: list[Technology]):
+def create_job_offer(db: Session, offer_data:dict, company:Company, technologies: list[Technology]):
     new_offer = JobOffer(**offer_data,company=company,technologies=technologies)
     db.add(new_offer)
     return new_offer

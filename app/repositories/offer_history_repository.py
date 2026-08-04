@@ -1,5 +1,4 @@
 import datetime
-
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 from app.models import OfferHistory
@@ -10,7 +9,7 @@ def get_by_offer_id(db: Session, offer_id: int):
     result = db.execute(query).scalars().all()
     return result
 
-def create(db: Session,
+def create_change(db: Session,
            offer_id: int,
            field_changed: str,
            change_at: datetime.date,

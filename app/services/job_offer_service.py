@@ -14,7 +14,7 @@ def create_job_offer_from_scraped_data(db: Session, data: JobOfferCreate) -> Job
     data_dict = data.model_dump(exclude={"company_name","technologies"})
     data_dict["status"] = OfferStatus.ACTIVE
     data_dict["last_seen_at"] = datetime.date.today()
-    offer = job_offer_repository.create(db, data_dict, company=company, technologies=tech)
+    offer = job_offer_repository.create_job_offer(db, data_dict, company=company, technologies=tech)
 
     db.commit()
     db.refresh(offer)
@@ -27,7 +27,9 @@ def detect_and_record_change(db: Session, old_offer: JobOffer, new_offer: JobOff
         old_value = getattr(old_offer, field)
         new_value = getattr(new_offer, field)
         if old_value != new_value:
-            offer_history_repository.create(db=db,offer_id=old_offer.offer_id,field_changed=field, old_value=str(old_value), new_value=str(new_value), change_at=datetime.date.today())
+            offer_history_repository.create_change(db=db, offer_id=old_offer.offer_id, field_changed=field,
+                                                   change_at=datetime.date.today(), old_value=str(old_value),
+                                                   new_value=str(new_value))
 
     old_offer.last_seen_at = datetime.date.today()
     db.commit()
