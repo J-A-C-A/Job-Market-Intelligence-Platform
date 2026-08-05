@@ -3,7 +3,7 @@ from unittest import mock
 import pytest
 from fastapi.testclient import TestClient
 from app.main import app as api_app
-from unittest.mock import MagicMock, PropertyMock
+from unittest.mock import MagicMock
 from datetime import date
 from app.models import Company
 from app.models.job_offer import JobOffer
