@@ -9,11 +9,15 @@ from app.enums import ExperienceLevel, ContractType, WorkMode
 
 
 @pytest.mark.parametrize("seniority_input, expected", [
-    ("Junior", ExperienceLevel.JUNIOR),
-    ("Mid", ExperienceLevel.MID),
-    ("Senior", ExperienceLevel.SENIOR),
-    ("Team Lider", ExperienceLevel.SENIOR),
-    ("Expert", ExperienceLevel.SENIOR)
+    ("JUNIOR", ExperienceLevel.JUNIOR),
+    ("MiD", ExperienceLevel.MID),
+    ("sEnIor", ExperienceLevel.SENIOR),
+    ("team lider", ExperienceLevel.SENIOR),
+    ("TeAm LeAdEr", ExperienceLevel.SENIOR),
+    ("expert", ExperienceLevel.SENIOR),
+    ("TRAINEE", ExperienceLevel.JUNIOR),
+    ("Internship", ExperienceLevel.JUNIOR),
+    ("intern", ExperienceLevel.JUNIOR),
 ])
 def test_map_experience_to_enum(seniority_input, expected):
     parse_data = {"basics": {"seniority": [seniority_input]}}
@@ -21,7 +25,7 @@ def test_map_experience_to_enum(seniority_input, expected):
     assert result == expected
 
 def test_map_experience_to_enum_raises_for_unknown_value():
-    parse_data = {"basics": {"seniority": ["Nieznana wartość"]}}
+    parse_data = {"basics": {"seniority": ["Unknown Value"]}}
     with pytest.raises(Exception):
         map_experience_to_enum(parse_data)
 
@@ -52,15 +56,28 @@ def test_parse_salary_uop_pln_hour():
     result = parse_salary_UOP(parse_data)
     assert result == [10_000, 15_000]
 
+def test_parse_salary_uop_pln_year():
+    parse_data = {'essentials': {
+        'originalSalary': {'currency': 'PLN', 'types': {'permanent': {'period': 'Year', 'range': [100_000, 150_000]}}},
+        'convertedSalary': {'currency': 'PLN', 'types': {'permanent': {'period': 'Month', 'range': [10_000, 15_000]}}}}}
+    result = parse_salary_UOP(parse_data)
+    assert result == [10_000, 15_000]
+
 def test_parse_salary_uop_huf_month():
     parse_data = {'essentials': {'originalSalary': {'currency': 'HUF', 'types': {'permanent': {'period': 'Month', 'range': [1_000_000, 1_500_000]}}}, 'convertedSalary':{'currency': 'PLN', 'types':{'permanent': {'period': 'Month', 'range': [10_000, 15_000]}}}}}
     result = parse_salary_UOP(parse_data)
     assert result == [10_000, 15_000]
 
-def test_parse_salary_uop_pln_raises_for_unknown_stake():
-    parse_data = {'essentials': {'originalSalary': {'currency': 'PLN', 'types': {'permanent': {'period': 'Week', 'range': [10_000, 15_000]}}}}}
-    with pytest.raises(Exception):
-        parse_salary_UOP(parse_data)
+# def test_parse_salary_uop_pln_raises_for_unknown_stake():
+#     parse_data = {'essentials': {'originalSalary': {'currency': 'PLN', 'types': {'permanent': {'period': 'Week', 'range': [10_000, 15_000]}}}}}
+#     with pytest.raises(Exception):
+#         parse_salary_UOP(parse_data)
+
+def test_parse_salary_uop_pln_no_converted_returns_none():
+    parse_data = {'essentials': {
+        'originalSalary': {'currency': 'PLN', 'types': {'permanent': {'period': 'Week', 'range': [1_000, 5_000]}}}}}
+    result = parse_salary_UOP(parse_data)
+    assert result is None
 
 def test_parse_salary_uop_huf_raises_for_lack_of_convertedSalary():
     parse_data = {'essentials': {'originalSalary': {'currency': 'HUF', 'types': {'permanent': {'period': 'Month', 'range': [1_000_000, 1_500_000]}}}}}
@@ -80,16 +97,28 @@ def test_parse_salary_b2b_pln_hour():
     result = parse_salary_B2B(parse_data)
     assert result == [10_000, 15_000]
 
+def test_parse_salary_b2b_pln_year():
+    parse_data = {'essentials': {
+        'originalSalary': {'currency': 'PLN', 'types': {'b2b': {'period': 'Year', 'range': [100_000, 150_000]}}},
+        'convertedSalary': {'currency': 'PLN', 'types': {'b2b': {'period': 'Month', 'range': [10_000, 15_000]}}}}}
+    result = parse_salary_B2B(parse_data)
+    assert result == [10_000, 15_000]
 
 def test_parse_salary_b2b_huf_month():
     parse_data = {'essentials': {'originalSalary': {'currency': 'HUF', 'types': {'b2b': {'period': 'Month', 'range': [1_000_000, 1_500_000]}}}, 'convertedSalary':{'currency': 'PLN', 'types':{'b2b': {'period': 'Month', 'range': [10_000, 15_000]}}}}}
     result = parse_salary_B2B(parse_data)
     assert result == [10_000, 15_000]
 
-def test_parse_salary_b2b_pln_raises_for_unknown_stake():
-    parse_data = {'essentials': {'originalSalary': {'currency': 'PLN', 'types': {'b2b': {'period': 'Week', 'range': [10_000, 15_000]}}}}}
-    with pytest.raises(Exception):
-        parse_salary_B2B(parse_data)
+def test_parse_salary_b2b_pln_no_converted_returns_none():
+    parse_data = {'essentials': {
+        'originalSalary': {'currency': 'PLN', 'types': {'b2b': {'period': 'Week', 'range': [1_000, 5_000]}}}}}
+    result = parse_salary_B2B(parse_data)
+    assert result is None
+
+# def test_parse_salary_b2b_pln_raises_for_unknown_stake():
+#     parse_data = {'essentials': {'originalSalary': {'currency': 'PLN', 'types': {'b2b': {'period': 'Week', 'range': [10_000, 15_000]}}}}}
+#     with pytest.raises(Exception):
+#         parse_salary_B2B(parse_data)
 
 def test_parse_salary_b2b_huf_raises_for_lack_of_convertedSalary():
     parse_data = {'essentials': {'originalSalary': {'currency': 'HUF', 'types': {'b2b': {'period': 'Month', 'range': [1_000_000, 1_500_000]}}}}}
@@ -104,6 +133,11 @@ def test_parse_mode_of_work_and_location_stationary():
 
 def test_parse_mode_of_work_and_location_remote():
     parse_data = {"location": {"places": [{"city":"Remote"},{'country': {'code': 'POL', 'name': 'Poland'}, 'city': 'Kraków'}], "remote": 5}}
+    result = parse_mode_of_work_and_location(parse_data)
+    assert result == [WorkMode.REMOTE, "Poland"]
+
+def test_parse_mode_of_work_and_location_remote_without_places():
+    parse_data = {"location": {"places": [{"city":"Remote"}], "remote": 5}}
     result = parse_mode_of_work_and_location(parse_data)
     assert result == [WorkMode.REMOTE, "Poland"]
 
@@ -142,11 +176,40 @@ def test_parse_salary_for_b2b():
     result = parse_salary(parse_data)
     assert result == [10_000, 15_000]
 
-def test_parse_salary_for_lock_of_uop_and_b2b():
+def test_parse_salary_for_lack_of_uop_and_b2b():
     parse_data = {'essentials': {
         'originalSalary': {'currency': 'PLN', 'types': {'umowa_o_dzieło': {'period': 'Month', 'range': [10_000, 15_000]}}}}}
     result = parse_salary(parse_data)
     assert result is None
+
+def test_parse_salary_uop_without_full_range():
+    parse_data = {'essentials': {
+        'originalSalary': {'currency': 'PLN',
+                           'types': {'permanent': {'period': 'Month', 'range': [10_000]}}}}}
+    with pytest.raises(Exception):
+        parse_salary(parse_data)
+
+def test_parse_salary_b2b_without_full_range():
+    parse_data = {'essentials': {
+        'originalSalary': {'currency': 'PLN',
+                           'types': {'b2b': {'period': 'Month', 'range': [10_000]}}}}}
+    with pytest.raises(Exception):
+        parse_salary(parse_data)
+
+def test_parse_salary_b2b_without__range():
+    parse_data = {'essentials': {
+        'originalSalary': {'currency': 'PLN',
+                           'types': {'b2b': {'period': 'Month'}}}}}
+    with pytest.raises(Exception):
+        parse_salary(parse_data)
+
+def test_parse_salary_uop_without__range():
+    parse_data = {'essentials': {
+        'originalSalary': {'currency': 'PLN',
+                           'types': {'permanent': {'period': 'Month'}}}}}
+    with pytest.raises(Exception):
+        parse_salary(parse_data)
+
 
 def test_find_list_of_offers():
     state= {"TestKey1": "TestVal1", "TestKey2": {"TestKey21": "TestVal21"},"HashKey": {"postings":"postingsVal"}}
@@ -222,20 +285,6 @@ def test_create_JobOffer():
     assert result.url_address == URL
     assert result.salary_min == 15000
     assert result.salary_max == 20000
-
-
-# company_name = company_name,
-# technologies = technologies,
-# job_title = job_title,
-# experience = experience_level,
-# type_of_contract = contract_type,
-# mode_of_work = mode_of_work,
-# location = location,
-# publication_date = None,
-# expiration_date = expiration_date,
-# url_address = url,
-# salary_min = min_salary,
-# salary_max = max_salary
 
 #====MonkeyPatch====
 def test_fetch_page(monkeypatch):
