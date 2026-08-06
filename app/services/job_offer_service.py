@@ -30,6 +30,7 @@ def detect_and_record_change(db: Session, old_offer: JobOffer, new_offer: JobOff
             offer_history_repository.create_change(db=db, offer_id=old_offer.offer_id, field_changed=field,
                                                    change_at=datetime.date.today(), old_value=str(old_value),
                                                    new_value=str(new_value))
+            setattr(old_offer, field, new_value)
 
     old_offer.last_seen_at = datetime.date.today()
     db.commit()
