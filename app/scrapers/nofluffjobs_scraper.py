@@ -4,7 +4,7 @@ import requests as req
 from bs4 import BeautifulSoup
 from app.enums import ExperienceLevel, WorkMode, ContractType
 from app.schemas.job_offer import JobOfferCreate
-
+import time
 CATEGORY_SLUGS = [
     "backend", "frontend", "fullstack", "mobile", "embedded", "testing",
     "devops", "architecture", "security", "game-dev", "artificial-intelligence",
@@ -84,21 +84,11 @@ def parse_company_name(parse_data:dict) -> str:
 def parse_salary_UOP(parse_data:dict) -> list | None:
     currency = parse_data.get("essentials", {}).get("originalSalary", {}).get("currency",None)
     type_of_stake = parse_data.get("essentials", {}).get("originalSalary", {}).get("types", {}).get("permanent", {}).get("period", None)
-    # if type_of_stake == "Hour":
-    #     salary = parse_data.get("essentials", {}).get("convertedSalary", {}).get("types", {}).get("permanent", {}).get("range", None)
-    # elif type_of_stake == "Month":
-    #     salary = parse_data.get("essentials", {}).get("originalSalary", {}).get("types", {}).get("permanent", {}).get("range",None)
-    # else:
-    #     raise Exception(f"Unexpected type_of_stake: {type_of_stake}")
-    #
-    # return salary
     if currency == "PLN":
         if type_of_stake == "Month":
             salary = parse_data.get("essentials", {}).get("originalSalary", {}).get("types", {}).get("permanent", {}).get("range",None)
-        elif type_of_stake == "Hour":
-            salary = parse_data.get("essentials", {}).get("convertedSalary", {}).get("types", {}).get("permanent",{}).get("range",None)
         else:
-            raise Exception(f"Unexpected type_of_stake: {type_of_stake}")
+            salary = parse_data.get("essentials", {}).get("convertedSalary", {}).get("types", {}).get("permanent",{}).get("range",None)
     else:
         type_of_stake = parse_data.get("essentials", {}).get("convertedSalary", {}).get("types", {}).get("permanent",{}).get("period", None)
         if type_of_stake == "Month":
@@ -110,20 +100,11 @@ def parse_salary_UOP(parse_data:dict) -> list | None:
 def parse_salary_B2B(parse_data:dict) -> list | None:
     currency = parse_data.get("essentials", {}).get("originalSalary", {}).get("currency", None)
     type_of_stake = parse_data.get("essentials", {}).get("originalSalary", {}).get("types", {}).get("b2b", {}).get("period",None)
-    # if type_of_stake == "Hour":
-    #     salary = parse_data.get("essentials", {}).get("convertedSalary", {}).get("types", {}).get("b2b", {}).get("range",None)
-    # elif type_of_stake == "Month":
-    #     salary = parse_data.get("essentials", {}).get("originalSalary", {}).get("types", {}).get("b2b", {}).get("range", None)
-    # else:
-    #     raise Exception(f"Unexpected type_of_stake: {type_of_stake}")
-    # return salary
     if currency == "PLN":
         if type_of_stake == "Month":
             salary = parse_data.get("essentials", {}).get("originalSalary", {}).get("types", {}).get("b2b", {}).get("range", None)
-        elif type_of_stake == "Hour":
-            salary = parse_data.get("essentials", {}).get("convertedSalary", {}).get("types", {}).get("b2b", {}).get("range", None)
         else:
-            raise Exception(f"Unexpected type_of_stake: {type_of_stake}")
+            salary = parse_data.get("essentials", {}).get("convertedSalary", {}).get("types", {}).get("b2b", {}).get("range", None)
     else:
         type_of_stake = parse_data.get("essentials", {}).get("convertedSalary", {}).get("types", {}).get("b2b",{}).get("period", None)
         if type_of_stake == "Month":
@@ -137,9 +118,17 @@ def parse_salary(parse_data:dict) -> list | None:
     b2b_data = parse_data.get("essentials", {}).get("originalSalary",{}).get("types",{}).get("b2b",None)
 
     if uop_data is not None:
-        return parse_salary_UOP(parse_data)
+        result = parse_salary_UOP(parse_data)
+        if result is not None and len(result) > 1:
+            return result
+        else:
+            raise Exception(f"Lack of full salary range in offer")
     elif b2b_data is not None:
-        return parse_salary_B2B(parse_data)
+        result = parse_salary_B2B(parse_data)
+        if result is not None and len(result) > 1:
+            return result
+        else:
+            raise Exception(f"Lack of full salary range in offer")
     else:
         return None
 
@@ -166,11 +155,19 @@ def parse_experience(parse_data:dict) -> str:
     return experience.title()
 
 def map_experience_to_enum(parse_data: dict) -> ExperienceLevel:
-    exp = parse_experience(parse_data)
+    exp = parse_experience(parse_data).title()
     if exp == "Team Lider":
+        level = ExperienceLevel("Senior")
+    elif exp == "Team Leader":
         level = ExperienceLevel("Senior")
     elif exp == "Expert":
         level = ExperienceLevel("Senior")
+    elif exp == "Trainee":
+        level = ExperienceLevel("Junior")
+    elif exp == "Internship":
+        level = ExperienceLevel("Junior")
+    elif exp == "Intern":
+        level = ExperienceLevel("Junior")
     else:
         try:
             level = ExperienceLevel(exp)
@@ -196,7 +193,10 @@ def parse_mode_of_work_and_location(parse_data:dict) -> list:
 
     if work_mode is not None:
         if work_mode == "Remote":
-            location = parse_data["location"]["places"][1]["country"]["name"]
+            if len(parse_data["location"]["places"]) > 1:
+                location = parse_data["location"]["places"][1]["country"]["name"]
+            else:
+                location = "Poland"
         else:
             location = parse_data["location"]["places"][0]["city"]
 
@@ -260,9 +260,12 @@ def run_scraper() -> list:
     category_url_list = build_category_list(CATEGORY_SLUGS)
     offers_url_list = get_offers_url_from_category(category_url_list)
     scraped_offers_list = []
+    retry_delay = 1
     for offer in offers_url_list:
+        time.sleep(1)
         try:
             html_content = fetch_page(offer)
+            retry_delay = 1
             state = parse_state_transfer(html_content)
             offer_slug = find_offer_slug(offer)
             posting_data = find_posting_data(state,offer_slug)
@@ -270,7 +273,10 @@ def run_scraper() -> list:
             if job_offer is not None:
                 scraped_offers_list.append(job_offer)
         except Exception as e:
-            print(f"Unexpected exception: {e}")
+            print(f"Unexpected exception: {e}, for offer: {offer}")
+            if "429" in str(e):
+                time.sleep(retry_delay)
+                retry_delay *= 2
 
     return scraped_offers_list
 
