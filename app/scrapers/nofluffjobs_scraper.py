@@ -260,23 +260,32 @@ def run_scraper() -> list:
     category_url_list = build_category_list(CATEGORY_SLUGS)
     offers_url_list = get_offers_url_from_category(category_url_list)
     scraped_offers_list = []
-    retry_delay = 1
+    MAX_RETRIES = 5
     for offer in offers_url_list:
         time.sleep(1)
-        try:
-            html_content = fetch_page(offer)
-            retry_delay = 1
-            state = parse_state_transfer(html_content)
-            offer_slug = find_offer_slug(offer)
-            posting_data = find_posting_data(state,offer_slug)
-            job_offer = create_JobOffer_from_scraped_data(posting_data,offer)
-            if job_offer is not None:
-                scraped_offers_list.append(job_offer)
-        except Exception as e:
-            print(f"Unexpected exception: {e}, for offer: {offer}")
-            if "429" in str(e):
-                time.sleep(retry_delay)
-                retry_delay *= 2
+        retry_delay = 1
+        retry_count = 0
+        while True:
+            try:
+                html_content = fetch_page(offer)
+                state = parse_state_transfer(html_content)
+                offer_slug = find_offer_slug(offer)
+                posting_data = find_posting_data(state,offer_slug)
+                job_offer = create_JobOffer_from_scraped_data(posting_data,offer)
+                if job_offer is not None:
+                    scraped_offers_list.append(job_offer)
+                    break
+            except Exception as e:
+                print(f"Unexpected exception: {e}, for offer: {offer}")
+                if "429" in str(e):
+                        retry_count += 1
+                        if retry_count >= MAX_RETRIES:
+                            print(f"Max retries reached for offer: {offer}")
+                            break
+                        time.sleep(retry_delay)
+                        retry_delay = min(retry_delay * 2, 30)
+                else:
+                    break
 
     return scraped_offers_list
 
